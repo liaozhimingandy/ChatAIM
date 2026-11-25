@@ -34,6 +34,9 @@ export default defineConfig({
         __IS_DEV__: process.env.NODE_ENV === 'development',
         __LIBRECHAT_VERSION__: rootPkg.version,
         __DATA_PROVIDER_VERSION__: pkg.version,
+        // ChatAIM: build-time API base for cross-origin static frontend deploys.
+        // Empty by default, preserving upstream same-origin behavior.
+        __API_BASE_URL__: JSON.stringify(process.env.API_BASE_URL_BUILD ?? ''),
       },
     }),
   ],

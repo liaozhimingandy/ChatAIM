@@ -4,8 +4,17 @@ import type * as t from './types';
 import { ResourceType } from './accessPermissions';
 import * as q from './types/queries';
 
+/** ChatAIM: build-time API base injection for cross-origin static deployments
+ * (e.g. GitHub Pages frontend + separate backend host). Replaced by the
+ * data-provider tsdown `replace` plugin from `API_BASE_URL_BUILD`; empty when
+ * unset, in which case the default same-origin `<base>` logic below applies. */
+declare const __API_BASE_URL__: unknown;
+const BUILD_API_BASE_URL = typeof __API_BASE_URL__ === 'string' ? __API_BASE_URL__ : '';
+
 let BASE_URL = '';
-if (
+if (BUILD_API_BASE_URL) {
+  BASE_URL = BUILD_API_BASE_URL;
+} else if (
   typeof process === 'undefined' ||
   (process as typeof process & { browser?: boolean }).browser === true
 ) {

@@ -42,8 +42,12 @@ jobs:
         run: npm ci
 
       # turbo 依赖图会先构建前置 workspace 包（data-provider / chat / client 等）
+      # API_BASE_URL_BUILD 经 data-provider tsdown replace 注入 __API_BASE_URL__，
+      # 使静态前端跨域调用独立后端（api.chataim.cn）
       - name: Build frontend
         run: npx turbo run build --filter=@librechat/frontend
+        env:
+          API_BASE_URL_BUILD: ${{ vars.VITE_API_BASE_URL || 'https://api.chataim.cn' }}
 
       # GitHub Pages 无服务端 rewrite：深链接刷新由 404.html 接管，SPA 路由自愈
       - name: SPA fallback (404.html)
