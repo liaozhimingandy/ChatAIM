@@ -49,11 +49,16 @@ jobs:
       - name: SPA fallback (404.html)
         run: cp client/dist/index.html client/dist/404.html
 
+      # 自定义域名固化：保留在部署产物中，防止 Pages 自定义域名配置被意外清除
+      - name: Pin custom domain (CNAME)
+        run: echo "chataim.cn" > client/dist/CNAME
+
       - name: Verify build output (fail = no deploy)
         run: |
           test -f client/dist/index.html || { echo "::error::index.html missing"; exit 1; }
           test -d client/dist/assets || { echo "::error::assets/ missing"; exit 1; }
           test -f client/dist/404.html || { echo "::error::404.html missing"; exit 1; }
+          test -f client/dist/CNAME || { echo "::error::CNAME missing"; exit 1; }
           echo "dist contents:"
           ls -la client/dist
 
