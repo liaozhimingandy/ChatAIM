@@ -129,9 +129,18 @@ jobs:
 
 ## 四、落地顺序
 
-1. ⏳ 磁盘释放 → 本地完成实际构建（frontend-build.md 第四节）
-2. ⏳ 本地验证 404.html 回退与静态资源子路径加载（`npx serve` 模拟子路径）
-3. ⏳ 实现改造 1（VITE_API_BASE_URL），单 PR 到 develop，保持可追踪
-4. ⏳ 上线工作流 A（build-only），观察 CI 绿
-5. ⏳ 后端 CORS 就绪后，配置仓库 Variables，上线工作流 B
-6. ⏳ 端到端验证：GH Pages 页面 → 登录 → 聊天 → 文件上传
+1. ✅ 工作流已上线并首次部署成功（2026-11-25，Run #1 全绿，构建+部署约 2 分钟）
+2. ✅ 自定义域名 chataim.cn 已启用（工作流内固化 CNAME 文件，commit cb41c17bf）
+3. ⏳ DNS 配置：chataim.cn A 记录 → 185.199.108.153 / 185.199.109.153 / 185.199.110.153 / 185.199.111.153，www.chataim.cn CNAME → liaozhimingandy.github.io
+4. ⏳ DNS 生效后 GitHub 自动签发 HTTPS 证书（Settings → Pages 可见进度）
+5. ⏳ 待办：`VITE_API_BASE_URL` 改造 PR → 后端 CORS → 端到端验证登录/聊天/上传
+
+> 注意：仓库 Pages 已配置自定义域名后，`liaozhimingandy.github.io/ChatAIM` 会 301 到 chataim.cn，这是 GitHub 官方行为。
+
+## 五、域名访问路径
+
+| 地址 | 说明 |
+|---|---|
+| https://chataim.cn | 主域名（DNS 配置后生效） |
+| https://www.chataim.cn | www 子域（可选，CNAME 指向 liaozhimingandy.github.io） |
+| https://liaozhimingandy.github.io/ChatAIM | 默认域（配置自定义域名后 301 到 chataim.cn） |
