@@ -4,6 +4,10 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
+      // ChatAIM: API base injection for cross-origin static frontend deploys;
+      // consumed by the data-provider tsdown replace plugin. turbo's strict env
+      // mode requires explicit declaration to reach the task process.
+      "env": ["API_BASE_URL_BUILD"],
       "inputs": [
         "src/**",
         "!src/**/__tests__/**",
