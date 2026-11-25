@@ -63,8 +63,15 @@ jobs:
           test -d client/dist/assets || { echo "::error::assets/ missing"; exit 1; }
           test -f client/dist/404.html || { echo "::error::404.html missing"; exit 1; }
           test -f client/dist/CNAME || { echo "::error::CNAME missing"; exit 1; }
-          echo "dist contents:"
+          # ChatAIM 品牌与跨域 API 注入校验
+          grep -q "<title>ChatAIM</title>" client/dist/index.html || { echo "::error::title not ChatAIM"; exit 1; }
+          grep -rq "api\.chataim\.cn" client/dist/assets/ || { echo "::error::API base not injected"; exit 1; }
+          test -f client/dist/assets/favicon.svg || { echo "::error::favicon.svg missing"; exit 1; }
+          grep -q "ChatAIM" client/dist/manifest.webmanifest || { echo "::error::PWA manifest not ChatAIM"; exit 1; }
+          echo "=== dist contents ==="
           ls -la client/dist
+          echo "=== injected title ==="
+          grep -o "<title>[^<]*</title>" client/dist/index.html
 
       - name: Setup GitHub Pages
         uses: actions/configure-pages@v5
