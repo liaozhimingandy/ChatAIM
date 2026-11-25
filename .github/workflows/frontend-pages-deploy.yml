@@ -1,0 +1,90 @@
+name: Deploy Frontend to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'client/**'
+      - 'packages/**'
+      - '.github/workflows/frontend-pages-deploy.yml'
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Reason for manual trigger'
+        required: false
+        default: 'Manual deploy requested'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 同一时间只允许一个部署，新提交取消进行中的旧部署
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build frontend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Use Node.js (from .nvmrc)
+        uses: actions/setup-node@v5
+        with:
+          node-version: '24.22.3'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # turbo 依赖图会先构建前置 workspace 包（data-provider / chat / client 等）
+      # API_BASE_URL_BUILD 经 data-provider tsdown replace 注入 __API_BASE_URL__，
+      # 使静态前端跨域调用独立后端（api.chataim.cn）
+      - name: Build frontend
+        run: npx turbo run build --filter=@librechat/frontend
+        env:
+          API_BASE_URL_BUILD: ${{ vars.VITE_API_BASE_URL || 'https://api.chataim.cn' }}
+
+      # GitHub Pages 无服务端 rewrite：深链接刷新由 404.html 接管，SPA 路由自愈
+      - name: SPA fallback (404.html)
+        run: cp client/dist/index.html client/dist/404.html
+
+      # 自定义域名固化：保留在部署产物中，防止 Pages 自定义域名配置被意外清除
+      - name: Pin custom domain (CNAME)
+        run: echo "chataim.cn" > client/dist/CNAME
+
+      - name: Verify build output (fail = no deploy)
+        run: |
+          test -f client/dist/index.html || { echo "::error::index.html missing"; exit 1; }
+          test -d client/dist/assets || { echo "::error::assets/ missing"; exit 1; }
+          test -f client/dist/404.html || { echo "::error::404.html missing"; exit 1; }
+          test -f client/dist/CNAME || { echo "::error::CNAME missing"; exit 1; }
+          echo "dist contents:"
+          ls -la client/dist
+
+      - name: Setup GitHub Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true   # 自动启用 Pages（Source: GitHub Actions）
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: client/dist
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build   # 构建或验证失败则不部署
+    if: success()
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
